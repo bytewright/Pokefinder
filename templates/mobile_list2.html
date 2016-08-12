@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Nearby Pokémon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% if auto_reload %}
+    <meta http-equiv="refresh" content="5; URL=/mobile2?auto_reload=True">
+    {% endif %}
+    {% if home_mode %}
+    <meta http-equiv="refresh" content="5; URL=/mobile2?home_mode=True">
+    {% endif %}
+
+    <style>
+      body{font-family:sans-serif}
+      h2{margin-top:10px;float:left}
+      .card {display:block;border:solid 1px #aaa;border-radius:2px;box-shadow:2px 2px 2px #eee;font-family:sans-serif;margin-bottom:8px;text-decoration:none;color:#444}
+      .card>div{margin: 15px 0}
+      img{float:left;image-rendering:pixelated}
+      h3{margin:0}
+      h3 small{color:#666}
+      span{color:#777}
+      .origin{position:relative;top:20px;padding-bottom:10px}
+      .head{display:inline-block;width:100%;}
+      .foot{display:inline-block;width:100%;}
+      .reloc{float:top;padding-bottom:10px}
+      .reloc button{padding:10px;border:solid 1px #ddd;background:white;font-size:17px;border-radius:3px;color:#333;cursor:pointer;width:140px}
+      .nav{float:right;padding-bottom:10px}
+      .nav button{padding:10px;border:solid 1px #ddd;background:white;font-size:17px;border-radius:3px;color:#333;cursor:pointer;width:140px}
+      #msg{color:#ddd;font-size:70%}
+      .nav label{padding:20px 10px;cursor:pointer}
+      @media(max-width:800px){h2{float:none}.nav{float:left}}
+    </style>
+  </head>
+  <body>
+    <div class="head">
+      <h2>Nearby Pokémon <small id="msg"></small></h2>
+      <div class="nav">
+        <button onclick="loadNearby()">Refresh</button>
+        <label><input type="checkbox" id="use-loc" onchange="toggleLocation()">Use device location</label>
+      </div>
+    </div>
+    {% for mode in range(2) %}
+        {% if mode == 0 and pokemon_list|length > 0 %}
+            {% for pokemon in pokemon_list %}
+            <a class="card" href='geo:0,0?q={{pokemon.latitude}},{{pokemon.longitude}}({{pokemon.name}})'>
+              <img height='60' width='80' src='static/pixel_icons/{{pokemon.id}}.png'>
+              <div>
+                <h3>{{pokemon.name}} <small>- {{pokemon.distance}}m ({{pokemon.card_dir}})</small></h3>
+                <span></span><input type="hidden" value="{{pokemon.disappear_time}}">
+              </div>
+            </a>
+            {% endfor %}
+            <h3>---------</h3>
+        {% else %}
+            {% for pokemon in pokemon_list_low %}
+                {% if pokemon.distance < max_distance or home_mode %}
+                    <a class="card" href='geo:0,0?q={{pokemon.latitude}},{{pokemon.longitude}}({{pokemon.name}})'>
+                      <img height='60' width='80' src='static/pixel_icons/{{pokemon.id}}.png'>
+                      <div>
+                        <h3>{{pokemon.name}} <small>- {{pokemon.distance}}m ({{pokemon.card_dir}})</small></h3>
+                        <span></span><input type="hidden" value="{{pokemon.disappear_time}}">
+                      </div>
+                    </a>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+    {# blub
+    <h3>---------</h3>
+    {% for pokemon in pokemon_list_low %}
+        {% if pokemon.distance < max_distance %}
+        <a class="card" href='geo:0,0?q={{pokemon.latitude}},{{pokemon.longitude}}({{pokemon.name}})'>
+          <img height='60' width='80' src='static/pixel_icons/{{pokemon.id}}.png'>
+          <div>
+            <h3>{{pokemon.name}} <small>- {{pokemon.distance}}m ({{pokemon.card_dir}})</small></h3>
+            <span></span><input type="hidden" value="{{pokemon.disappear_time}}">
+          </div>
+        </a>
+        {% endif %}
+    {% endfor %}
+    #}
+    <div class="foot">
+        <div class="reloc">
+            <button onclick="relocate()">Relocate</button>
+        </div>
+    </div>
+    <a class="origin" href='geo:0,0?q={{origin_lat}},{{origin_lng}}(origin)'>scan origin</a>
+    <script>
+      var msg = document.getElementById('msg');
+      var useLoc = document.getElementById('use-loc');
+
+      if (localStorage.useLoc) useLoc.checked = localStorage.useLoc === 'true';
+
+      function toggleLocation() {
+          localStorage.useLoc = useLoc.checked;
+      }
+
+      function loadNearby() {
+        if (localStorage.useLoc !== 'true') {
+          return (location.href="/mobile");
+        } else if ("geolocation" in navigator) {
+          msg.innerText='Getting location...';
+          navigator.geolocation.getCurrentPosition(function(p) {
+            msg.innerText='Reloading...';
+            location.href='/mobile?lat='+p.coords.latitude+'&lon='+p.coords.longitude;
+          }, function(err) {
+            msg.innerText='';
+            alert('Failed to get location: ' + err.message);
+          }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 10000
+          });
+        } else {
+          alert('Your device does not support web geolocation');
+        }
+      }
+      function relocate() {
+      if ("geolocation" in navigator) {
+          msg.innerText='Getting location...';
+          navigator.geolocation.getCurrentPosition(function(p) {
+            msg.innerText='Reloading...';
+            var form = document.createElement("form");
+            form.setAttribute("method", "post");
+            form.setAttribute("action", "/next_loc");
+
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", "lat");
+            hiddenField.setAttribute("value", p.coords.latitude);
+            form.appendChild(hiddenField);
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", "lon");
+            hiddenField.setAttribute("value", p.coords.longitude);
+            form.appendChild(hiddenField);
+
+            document.body.appendChild(form);
+            form.submit();
+          }, function(err) {
+            msg.innerText='';
+            alert('Failed to get location: ' + err.message);
+          }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000
+          });
+        } else {
+          alert('Your device does not support web geolocation');
+        }
+      }
+
+      var cards = document.querySelectorAll('.card');
+      function updateTimes() {
+        for (var i=0; i<cards.length; i++) {
+          var utcString = cards[i].querySelector('input').value;
+          var disappearsAt = new Date(utcString);
+          disappearsAt.setMinutes(disappearsAt.getMinutes()-disappearsAt.getTimezoneOffset());
+          var secondsLeft = (disappearsAt.getTime()-Date.now())/1000;
+          var timeLeft = secondsLeft > 0 ? Math.floor(secondsLeft / 60) + 'm ' + Math.floor(secondsLeft % 60) + 's' : '(expired)';
+          cards[i].querySelector('span').innerText = timeLeft;
+        }
+      }
+      setInterval(updateTimes, 1000);
+      updateTimes();
+    </script>
+  </body>
+</html>

@@ -120,6 +120,10 @@ def get_args():
                         type=int, default=5)
     parser.add_argument('-wh', '--webhook', help='Define URL(s) to POST webhook information to',
                         nargs='*', default=False, dest='webhooks')
+    parser.add_argument('--ignore_list', type=parse_unicode,
+                        help='ignore_list')
+    parser.add_argument('--location_list',
+                        help='ignore_list')
     parser.set_defaults(DEBUG=False)
 
     args = parser.parse_args()

@@ -17,7 +17,7 @@ from flask_cors import CORS
 from flask_cache_bust import init_cache_busting
 
 from pogom import config
-from pogom.app import Pogom
+from pogom.exapp import MyPogom
 from pogom.utils import get_args, insert_mock_data, get_encryption_lib_path
 
 from pogom.search import search_overseer_thread, fake_search_loop
@@ -125,7 +125,9 @@ if __name__ == '__main__':
     config['LOCALE'] = args.locale
     config['CHINA'] = args.china
 
-    app = Pogom(__name__)
+    app = MyPogom(__name__)
+    app.set_my_params([int(y) for y in args.ignore_list.split(',')], args.location_list.split("-"))
+
     db = init_database(app)
     if args.clear_db:
         log.info('Clearing database')
