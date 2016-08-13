@@ -97,12 +97,12 @@
 
       function loadNearby() {
         if (localStorage.useLoc !== 'true') {
-          return (location.href="/mobile");
+          return (location.href="/mobile2");
         } else if ("geolocation" in navigator) {
           msg.innerText='Getting location...';
           navigator.geolocation.getCurrentPosition(function(p) {
             msg.innerText='Reloading...';
-            location.href='/mobile?lat='+p.coords.latitude+'&lon='+p.coords.longitude;
+            location.href='/mobile2?lat='+p.coords.latitude+'&lon='+p.coords.longitude;
           }, function(err) {
             msg.innerText='';
             alert('Failed to get location: ' + err.message);
@@ -139,7 +139,7 @@
             form.submit();
           }, function(err) {
             msg.innerText='';
-            alert('Failed to get location: ' + err.message);
+            alert('BLA Failed to get location: ' + err.message);
           }, {
             enableHighAccuracy: true,
             timeout: 10000,
